@@ -59,7 +59,8 @@ ISR(PCINT0_vect)
 	servo_pwm_select();
 }
 
-void init_port(){
+void init_port()
+{
 	MCUCR |= (1<<PUD);
 	DDRB = 0xff;PORTB = 0x00;
 	/* Configure PWMPIN as output to generate pwm */
@@ -73,7 +74,8 @@ void init_port(){
  * Generated freq is 50 Hz with ~100us/tick resolution
  */
 void init_tim()
-{	/* TOP counter value 375/2=187.5 (150000/8/375=50Hz) */
+{	
+	/* TOP counter value 375/2=187.5 (150000/8/375=50Hz) */
 	/* Timer clock = I/O clock / 8 = 18750 */
 	TCCR0A = (1<<COM0B1)|(1<<WGM00);
 	TCCR0B = (1<<CS01)|(1<<WGM02);
@@ -112,7 +114,9 @@ void Enable_Interrupt()
 	//GIMSK |= (1<<INT0);
 	GIMSK |= (1<<PCIE);
 	PCMSK |= (1<<PCINT3);
-}void Disable_Interrupt()
+}
+
+void Disable_Interrupt()
 {
 	//GIMSK = (GIMSK&(~(1<<INT0)));
 	GIMSK = (GIMSK&(~(1<<PCIE)));
