@@ -3,7 +3,7 @@
  *
  * Created: 13.12.2019 14:55:55
  *  Author: Legkiy
- */ 
+ */
 
 #include <stdbool.h>
 #include "common.h"
@@ -54,21 +54,26 @@ ISR(PCINT0_vect)
 	sleep_disable();
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	f_sleep = false;
-		
+
 	//timer value should change here
 	servo_pwm_select();
 }
 
-void init_port(){	MCUCR |= (1<<PUD);	DDRB = 0xff;	PORTB = 0x00;	/* Configure PWMPIN as output to generate pwm */
-	DDRB |= _BV(PWMPIN);	/* Turn on input pin */	DDRB &= ~(_BV(INPIN));}
+void init_port(){
+	MCUCR |= (1<<PUD);
+	DDRB = 0xff;PORTB = 0x00;
+	/* Configure PWMPIN as output to generate pwm */
+	DDRB |= _BV(PWMPIN);
+	/* Turn on input pin */
+	DDRB &= ~(_BV(INPIN));
+}
 
 /*
  * Timer set on phase correct dual-slope PWM. TOP value is 188.
  * Generated freq is 50 Hz with ~100us/tick resolution
  */
 void init_tim()
-{
-	/* TOP counter value 375/2=187.5 (150000/8/375=50Hz) */
+{	/* TOP counter value 375/2=187.5 (150000/8/375=50Hz) */
 	/* Timer clock = I/O clock / 8 = 18750 */
 	TCCR0A = (1<<COM0B1)|(1<<WGM00);
 	TCCR0B = (1<<CS01)|(1<<WGM02);
@@ -84,7 +89,9 @@ void init_tim()
 	TIFR0 = 1<<TOV0;
 	/* Enable Overflow Interrupt */
 	TIMSK0 = (1<<TOIE0);
-}void Configure_Interrupt(uint8_t INT_MODE)
+}
+
+void Configure_Interrupt(uint8_t INT_MODE)
 {
 	switch(INT_MODE)
 	{
@@ -98,11 +105,13 @@ void init_tim()
 		break;
 		default:break;
 	}
-}void Enable_Interrupt()
+}
+
+void Enable_Interrupt()
 {
 	//GIMSK |= (1<<INT0);
 	GIMSK |= (1<<PCIE);
-	PCMSK |= (1<<PCINT3);	
+	PCMSK |= (1<<PCINT3);
 }void Disable_Interrupt()
 {
 	//GIMSK = (GIMSK&(~(1<<INT0)));
