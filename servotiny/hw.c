@@ -55,8 +55,14 @@ ISR(PCINT0_vect)
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	f_sleep = false;
 
-	//timer value should change here
-	servo_pwm_select();
+	//trigger output pin
+	if (PINB & (1<<INPIN)){
+		PINB = _BV(OUTPIN1);
+		PINB = _BV(OUTPIN2);
+	} else {
+		PINB = _BV(OUTPIN1);
+		PINB = _BV(OUTPIN2);
+	}
 }
 
 void init_port()
@@ -64,7 +70,11 @@ void init_port()
 	MCUCR |= (1<<PUD);
 	DDRB = 0xff;PORTB = 0x00;
 	/* Configure PWMPIN as output to generate pwm */
-	DDRB |= _BV(PWMPIN);
+	//DDRB |= _BV(PWMPIN);
+	/* COnfigure OUTPINs as output */
+	DDRB |= _BV(OUTPIN1);
+	DDRB |= _BV(OUTPIN2);
+	PORTB |= _BV(OUTPIN2);
 	/* Turn on input pin */
 	DDRB &= ~(_BV(INPIN));
 }
@@ -77,7 +87,7 @@ void init_tim()
 {	
 	/* TOP counter value 375/2=187.5 (150000/8/375=50Hz) */
 	/* Timer clock = I/O clock / 8 = 18750 */
-	TCCR0A = (1<<COM0B1)|(1<<WGM00);
+	TCCR0A = (1<<WGM00);
 	TCCR0B = (1<<CS01)|(1<<WGM02);
 	/* Output compare register A is TOP value */
 	OCR0A = 189; //value differs depending on each attiny13
@@ -86,7 +96,7 @@ void init_tim()
 	 */
 	/* Output compare register B is pulse width value */
 	// 100us LSb
-	servo_pwm_select();
+	//servo_pwm_select();
 	/* Clear overflow flag */
 	TIFR0 = 1<<TOV0;
 	/* Enable Overflow Interrupt */

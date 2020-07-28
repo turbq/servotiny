@@ -24,6 +24,8 @@
  */
 #define INPIN	3
 #define PWMPIN	1
+#define OUTPIN1 1
+#define OUTPIN2 2
 
 /*
  *	Servo macro
