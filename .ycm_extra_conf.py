@@ -31,7 +31,13 @@ flags = [
     '-isystem', '/usr/local/include/eigen3',
     '-I', 'include',
     '-I.',
-    '-I', '/usr/avr/include'
+    '-I', '/usr/avr/include/',
+    # Test flags
+    '-mmcu=attiny13',
+    '-DF_CPU=20000000UL',
+    '-D__AVR__',
+    '-D__AVR_ATtiny13__',
+    '-DARCH=ARCH_ATTINY',
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
