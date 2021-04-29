@@ -45,6 +45,19 @@ ISR(TIM0_OVF_vect)
 	}
 }
 
+inline void pin_tristate(uint8_t pin_num)
+{
+	DDRB &= ~_BV(pin_num);
+	PORTB |= _BV(pin_num);
+}
+
+inline void pin_outlow(uint8_t pin_num)
+{
+	PORTB &= ~_BV(pin_num);
+	DDRB |= _BV(pin_num);
+}
+
+
 /*
  *	Pin change interrupt handler
  */
@@ -57,11 +70,11 @@ ISR(PCINT0_vect)
 
 	//trigger output pin
 	if (PINB & (1<<INPIN)){
-		PINB = _BV(OUTPIN1);
-		PINB = _BV(OUTPIN2);
-	} else {
-		PINB = _BV(OUTPIN1);
-		PINB = _BV(OUTPIN2);
+		pin_outlow(OUTPIN1);
+		pin_tristate(OUTPIN2);
+	} else {	
+		pin_outlow(OUTPIN2);
+		pin_tristate(OUTPIN1);
 	}
 }
 
@@ -71,10 +84,6 @@ void init_port()
 	DDRB = 0xff;PORTB = 0x00;
 	/* Configure PWMPIN as output to generate pwm */
 	//DDRB |= _BV(PWMPIN);
-	/* COnfigure OUTPINs as output */
-	DDRB |= _BV(OUTPIN1);
-	DDRB |= _BV(OUTPIN2);
-	PORTB |= _BV(OUTPIN2);
 	/* Turn on input pin */
 	DDRB &= ~(_BV(INPIN));
 }

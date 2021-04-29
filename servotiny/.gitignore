@@ -1,0 +1,10 @@
+*.[oa]
+*.lst
+*.hex
+*.elf
+*.*
+# exclude
+!*.[ch]
+!.ycm_extra_conf.py
+!.gitignore
+!.vimrc
