@@ -12,6 +12,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
 
 /*
  *	Cpu defaults
@@ -25,7 +26,7 @@
 #define INPIN	3
 #define PWMPIN	1
 #define OUTPIN1 1
-#define OUTPIN2 2
+#define OUTPIN2 4
 
 /*
  *	Servo macro
@@ -35,6 +36,11 @@
 #define S_CLOSE 0x12	//equals 1.8 ms
 #define S_OPEN	0x0a	//equals 1 ms
 
+#define RC_ENABLE  true
+#define RC_DISABLE false
+#define COUNTDOWN true
+#define WOKEN false
+
 /* timer */
 typedef struct {
 	uint32_t glob_sec;       // uptime in secounds
@@ -43,6 +49,7 @@ typedef struct {
 	uint8_t hour;
 	uint8_t day;
 	uint16_t pwr_dn;
+	uint16_t rc_en;		// rc enable counter
 } daytime;
 
 
@@ -58,5 +65,6 @@ void Disable_Interrupt(void);
 
 void servo_pwm_select(void);
 void hw_init(void);
+void remote_en(void);
 
 #endif /* COMMON_H_ */

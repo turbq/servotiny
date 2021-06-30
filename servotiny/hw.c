@@ -8,24 +8,30 @@
 #include <stdbool.h>
 #include "common.h"
 
+#define RECONNECT_TIME 300
+
 volatile daytime uptime;
 
 //sleep flag shows if nothing happens until last pwr_dn increment
-volatile bool f_sleep = true;
+volatile bool f_sleep = COUNTDOWN, f_remote_st = RC_DISABLE;
 
 ISR(TIM0_OVF_vect)
 {
 	static uint8_t one_in_fifty = 0;
 	one_in_fifty++;
-	if (!f_sleep){//reset pwr_dn counter when some actions executed
-		f_sleep = true;
+	if (f_sleep == WOKEN){//reset pwr_dn counter when some actions executed
+		f_sleep = COUNTDOWN;
 		uptime.pwr_dn = 0;
 	}
 	if (one_in_fifty == 50){
 		uptime.glob_sec++;
 		uptime.sec++;
 		uptime.pwr_dn++;
+		(uptime.rc_en--==0 ? remote_en() : 0);
 		one_in_fifty = 0;
+		if (uptime.glob_sec == 10){
+			PCMSK |= (1<<PCINT3);
+		}
 	}
 	if (uptime.sec == 60){
 		uptime.sec = 0;
@@ -39,8 +45,9 @@ ISR(TIM0_OVF_vect)
 		uptime.hour = 0;
 		uptime.day++;
 	}
-	if (uptime.pwr_dn == 300){ //power down after ~5 mins
+	if (uptime.pwr_dn == 305){ //power down after ~5 mins
 		uptime.pwr_dn = 0;
+		wdt_disable();
 		set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	}
 }
@@ -51,12 +58,38 @@ inline void pin_tristate(uint8_t pin_num)
 	PORTB |= _BV(pin_num);
 }
 
+inline void pin_outhigh(uint8_t pin_num)
+{
+	PORTB |= _BV(pin_num);
+	DDRB |= _BV(pin_num);
+}
+
 inline void pin_outlow(uint8_t pin_num)
 {
 	PORTB &= ~_BV(pin_num);
 	DDRB |= _BV(pin_num);
 }
 
+void remote_en()
+{
+	if (f_remote_st == RC_ENABLE) {
+		return;
+	}
+	f_remote_st = RC_ENABLE;
+	uptime.rc_en = 0;
+	pin_outlow(OUTPIN2);
+	pin_outhigh(OUTPIN1);
+}
+
+void remote_dis()
+{
+	if (f_remote_st == RC_ENABLE) {
+		uptime.rc_en = RECONNECT_TIME; //5 min counter
+		f_remote_st = RC_DISABLE;
+		pin_outlow(OUTPIN1);
+		pin_outhigh(OUTPIN2);
+	}
+}
 
 /*
  *	Pin change interrupt handler
@@ -66,15 +99,14 @@ ISR(PCINT0_vect)
 	/* wake up */
 	sleep_disable();
 	set_sleep_mode(SLEEP_MODE_IDLE);
-	f_sleep = false;
+	if (WDTCR & 1<<WDTIE) {
+		wdt_enable(WDTO_4S);
+	}
+	f_sleep = WOKEN;
 
 	//trigger output pin
-	if (PINB & (1<<INPIN)){
-		pin_outlow(OUTPIN1);
-		pin_tristate(OUTPIN2);
-	} else {	
-		pin_outlow(OUTPIN2);
-		pin_tristate(OUTPIN1);
+	if (!(PINB & (1<<INPIN))){
+		remote_dis();
 	}
 }
 
@@ -132,7 +164,6 @@ void Enable_Interrupt()
 {
 	//GIMSK |= (1<<INT0);
 	GIMSK |= (1<<PCIE);
-	PCMSK |= (1<<PCINT3);
 }
 
 void Disable_Interrupt()
@@ -163,6 +194,7 @@ void hw_init()
 	/* analog comparator disable */
 	ACSR |= (1<<ACD);
 	ACSR &= ~(1<<ACI);
+	wdt_enable(WDTO_4S);
 	set_sleep_mode(SLEEP_MODE_IDLE);
 	sei();
 }
