@@ -3,6 +3,8 @@
 *.hex
 *.elf
 *.*
+/Release
+/Debug
 # exclude
 !*.[ch]
 !.ycm_extra_conf.py

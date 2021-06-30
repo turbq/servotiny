@@ -46,7 +46,7 @@
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
         <InterfaceProperties>
-          <IspClock>30000</IspClock>
+          <IspClock>8000</IspClock>
         </InterfaceProperties>
         <InterfaceName>ISP</InterfaceName>
       </ToolOptions>
@@ -55,7 +55,7 @@
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
     <avrtoolinterface>ISP</avrtoolinterface>
-    <avrtoolinterfaceclock>30000</avrtoolinterfaceclock>
+    <avrtoolinterfaceclock>8000</avrtoolinterfaceclock>
     <custom>
       <ToolOptions>
         <InterfaceProperties>

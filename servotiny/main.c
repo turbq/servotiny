@@ -5,7 +5,17 @@
  * Author : Legkiy
  */ 
 
+/* Release v1.0.0 */
+
 #include "common.h"
+
+FUSES =
+{
+	.low = LFUSE_DEFAULT,
+	.high = HFUSE_DEFAULT,	//SPIEn
+};
+
+LOCKBITS = LOCKBITS_DEFAULT;
 
 int main(void)
 {
@@ -13,6 +23,7 @@ int main(void)
     /* Replace with your application code */
     while (1) 
     {
+		wdt_reset();
 		sleep_mode();
     }
 }
