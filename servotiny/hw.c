@@ -8,16 +8,21 @@
 #include <stdbool.h>
 #include "common.h"
 
-#define RECONNECT_TIME 300
+#define RECON_TIME_1 180
+#define RECON_TIME_2 300
+#define RECON_TIME_3 420
+#define RECON_TIME_4 600
+#define RECON_TIME_5 900
 
 volatile daytime uptime;
 
 //sleep flag shows if nothing happens until last pwr_dn increment
-volatile bool f_sleep = COUNTDOWN, f_remote_st = RC_DISABLE;
+volatile bool f_sleep = COUNTDOWN, f_remote_st = RC_DISABLED;
+volatile uint8_t int_cnt = 0, down_timer = 0; //interrupts counter and timer to rc antenna powerdown
 
 ISR(TIM0_OVF_vect)
 {
-	static uint8_t one_in_fifty = 0;
+	static uint8_t one_in_fifty = 0; //50 ticks to one second
 	one_in_fifty++;
 	if (f_sleep == WOKEN){//reset pwr_dn counter when some actions executed
 		f_sleep = COUNTDOWN;
@@ -27,17 +32,22 @@ ISR(TIM0_OVF_vect)
 		uptime.glob_sec++;
 		uptime.sec++;
 		uptime.pwr_dn++;
-		(uptime.rc_en--==0 ? remote_en() : 0);
+		(uptime.rc_en--==0 ? remote_en() : ((void)0));
+		if (down_timer == 0){ //when timeout of waiting LED signal ends
+			remote_dis();
+		} else {
+			down_timer--; //still waiting
+		}
 		one_in_fifty = 0;
-		if (uptime.glob_sec == 10){
+		if (uptime.glob_sec == 10){ //approximately after this time drone's init end
 			PCMSK |= (1<<PCINT3);
 		}
 	}
-	if (uptime.sec == 60){
+	if (uptime.sec == 60){ //min counter
 		uptime.sec = 0;
 		uptime.min++;
 	}
-	if (uptime.min == 60){
+	if (uptime.min == 60){ //hours counter
 		uptime.min = 0;
 		uptime.hour++;
 	}
@@ -45,26 +55,26 @@ ISR(TIM0_OVF_vect)
 		uptime.hour = 0;
 		uptime.day++;
 	}
-	if (uptime.pwr_dn == 305){ //power down after ~5 mins
+	if (uptime.pwr_dn == 920){ //power down after 920 sec
 		uptime.pwr_dn = 0;
 		wdt_disable();
 		set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	}
 }
 
-inline void pin_tristate(uint8_t pin_num)
+static inline void pin_tristate(uint8_t pin_num)
 {
 	DDRB &= ~_BV(pin_num);
 	PORTB |= _BV(pin_num);
 }
 
-inline void pin_outhigh(uint8_t pin_num)
+static inline void pin_outhigh(uint8_t pin_num)
 {
 	PORTB |= _BV(pin_num);
 	DDRB |= _BV(pin_num);
 }
 
-inline void pin_outlow(uint8_t pin_num)
+static inline void pin_outlow(uint8_t pin_num)
 {
 	PORTB &= ~_BV(pin_num);
 	DDRB |= _BV(pin_num);
@@ -72,10 +82,10 @@ inline void pin_outlow(uint8_t pin_num)
 
 void remote_en()
 {
-	if (f_remote_st == RC_ENABLE) {
+	if (f_remote_st == RC_ENABLED) {
 		return;
 	}
-	f_remote_st = RC_ENABLE;
+	f_remote_st = RC_ENABLED;
 	uptime.rc_en = 0;
 	pin_outlow(OUTPIN2);
 	pin_outhigh(OUTPIN1);
@@ -83,9 +93,31 @@ void remote_en()
 
 void remote_dis()
 {
-	if (f_remote_st == RC_ENABLE) {
-		uptime.rc_en = RECONNECT_TIME; //5 min counter
-		f_remote_st = RC_DISABLE;
+	if (!int_cnt) { //do nothing when no pulses registered
+		return;
+	}
+	if (f_remote_st == RC_ENABLED) {
+		switch(int_cnt){
+			case 1:
+				uptime.rc_en = RECON_TIME_1; //5 min counter
+				break;
+			case 2:
+				uptime.rc_en = RECON_TIME_2; //5 min counter
+				break;
+			case 3:
+				uptime.rc_en = RECON_TIME_3; //5 min counter
+				break;
+			case 4:
+				uptime.rc_en = RECON_TIME_4; //5 min counter
+				break;
+			case 5:
+				uptime.rc_en = RECON_TIME_5; //5 min counter
+				break;
+			default:
+				uptime.rc_en = 0; //5 min counter
+		}
+		f_remote_st = RC_DISABLED;
+		int_cnt = 0;
 		pin_outlow(OUTPIN1);
 		pin_outhigh(OUTPIN2);
 	}
@@ -106,7 +138,8 @@ ISR(PCINT0_vect)
 
 	//trigger output pin
 	if (!(PINB & (1<<INPIN))){
-		remote_dis();
+		down_timer += 1;
+		int_cnt++;
 	}
 }
 

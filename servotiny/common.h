@@ -36,8 +36,8 @@
 #define S_CLOSE 0x12	//equals 1.8 ms
 #define S_OPEN	0x0a	//equals 1 ms
 
-#define RC_ENABLE  true
-#define RC_DISABLE false
+#define RC_ENABLED  true
+#define RC_DISABLED false
 #define COUNTDOWN true
 #define WOKEN false
 
@@ -66,5 +66,6 @@ void Disable_Interrupt(void);
 void servo_pwm_select(void);
 void hw_init(void);
 void remote_en(void);
+void remote_dis(void);
 
 #endif /* COMMON_H_ */
